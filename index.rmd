@@ -1,0 +1,54 @@
+---
+title: 'Small Sample Size Solutioins: Switch Samplers'
+author: "Veen, D., Smid, S.C. & Van de Schoot, R."
+date: "3 oktober 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract {-}
+
+## Introduction
+
+Many simulation studies have looked at using Bayesian statistics as a solution to the issue of limited sample size (REFS). Those simulation studies often compare Bayesian and Frequentist methods, reporting measures such as bias or coverage taken from a Frequentist perspective. In this short study we show that if one does not look at a comparance between Frequentist or Bayesian statistics and thereby forgoes the evaluation metrics from taken from that persepctive, some of the issues that are found in the simulation studies can be explained and resolved.
+
+When looking at a small sample simulation study from a Bayesian perspective it does not make sense to evaluate point estimates and the bias or coverage properties of the estimation procedure with respect to those point estimates. What a Bayesian should care about is calibration (CALIBRATION REFS). What is meant by calibration is that if we produce a 95\% Credibility Interval this interval actually contains the true probability 95% of the time. The same holds for 80\%, 60\% or any other arbitrarly chosen interval. In other words, given that the correct model is specified, does the chosen inference algorithm allow me to obtain the correct posterior distribution. Recently Talts et al. (2019) have proposed a method that allows one to check if their inference algorithm is actually properly calibrated. They propose Simulation Based Calibration (SBC) as a part of robust Bayesian workflow. We show that not only can SBC prevent us from applying wrongfull inference in the future, it can help us explain some observations from the past.
+
+In simulation studies that looked into small sample size issues, Bayesian method are found to be an improvement over classical frequentist statistics given that enough prior information is specified to assist the classical data to find the correct point estimate. However, a fair point is that one can never know if one's prior information is actually "correct". Those same simulation studies find that Bayesian statistics with naively chosen priors, or even with weakly informative priors can perform even worse than frequentist statistics. One of the issues that is often found is that the variance parameters "blow up", that is provide estimates that are very far from the value that was used to simulate the data. In this paper we use SBC to show that this problem can be attributed to the poor calibration of the Bayesian inference algorithm. We show that these large values and biases for the variance parameters disappear if an alternative more suffiticated inference algorithm is used that is properly calibrated. In the remainder of this paper we first briefly explain SBC. Thereafter we provide a case study in which we show that using the JAGS gibbs sampler results in the type of behavior that we know from earlier simulation studies, whilst using the Stan's No-U-Turn-Sampler (NUTS) on the exact same data remedies all issues. We finish the paper by reiterating some guidelines for doing robust Bayesian inference that are particular useful when taking the capability of your models and algoritms to the test with small samples, noisy data, or complex models.
+
+## Simulation Based Calibration
+
+To show allow readers to get more feeling for SBC plots and what they imply about the Computed Data-Averaged Posterior, or the calibration of the algorithm, we created a shiny application which can be seen at [https://utrecht-university.shinyapps.io/SBC_plots/](https://utrecht-university.shinyapps.io/SBC_plots/) or the OSF webpage for this project at [create one](). 
+
+
+## Case Study
+
+
+For this case study we take a look at a Latent Growth Curve Model (LGM) with only thee observed time points. LGMs are used to ...... For more information see REFERENCES E.G. LITTLE ET AL. SEE OTHER CHAPTERS DUCO. LGMs for small samples are studies by for instance SEE REFS SANNE'S PAPERS & SANNES PAPERS.
+
+```{r ch07figLGM, echo = FALSE, fig.align = "center", out.width = '50%', fig.cap = "Visual representation of a Latent Growth Curve Model with three observed time points for PTSS. "}
+par(mfrow = c(1, 1))
+LGM_model_semPlot <- '
+Intercept =~ 1 * x1 + 1 * x2 + 1 * x3
+Slope =~ 1 * x1 + 3 * x2 + 12 * x3
+Intercept ~~ Intercept
+Slope ~~ Slope
+Intercept ~~ Slope
+' 
+```
+
+In the case study we will be taking this model to breaking point by simulating a situation in which we only have data for 10 individuals at three time point. Moreover, a known issue in the computation of these types of models is the so called funnel in the posterior distribution (SEE REFS ON NON-CENTERED PARAMETRIZATION). 
+
+
+
+## Appendix {-}
+SBC code..
+
+<!-- We will not go into argumentation here on the relevance of trying to get as close to a point -->
+
+ 
+
+ 
