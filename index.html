@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Small Sample Size Solutioins: Switch Samplers</title>
+  <meta name="description" content="Small Sample Size Solutioins: Switch Samplers" />
+  <meta name="generator" content="bookdown 0.14 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="Small Sample Size Solutioins: Switch Samplers" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+  <meta name="github-repo" content="VeenDuco/SBC_LGM" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Small Sample Size Solutioins: Switch Samplers" />
+  
+  
+  
+
+<meta name="author" content="Veen, D., Smid, S.C. &amp; Van de Schoot, R." />
+
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="" data-path=""><a href="#abstract"><i class="fa fa-check"></i>Abstract</a></li>
+<li class="chapter" data-level="0.1" data-path=""><a href="#introduction"><i class="fa fa-check"></i><b>0.1</b> Introduction</a></li>
+<li class="chapter" data-level="0.2" data-path=""><a href="#simulation-based-calibration"><i class="fa fa-check"></i><b>0.2</b> Simulation Based Calibration</a><ul>
+<li class="chapter" data-level="0.2.1" data-path=""><a href="#placeholder-sbc-explanation-taken-from-case-study-annotation-data-with-bob"><i class="fa fa-check"></i><b>0.2.1</b> PLACEHOLDER SBC EXPLANATION TAKEN FROM CASE STUDY ANNOTATION DATA WITH BOB</a></li>
+</ul></li>
+<li class="chapter" data-level="0.3" data-path=""><a href="#case-study"><i class="fa fa-check"></i><b>0.3</b> Case Study</a></li>
+<li class="chapter" data-level="" data-path=""><a href="#appendix"><i class="fa fa-check"></i>Appendix</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Small Sample Size Solutioins: Switch Samplers</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="header">
+<h1 class="title">Small Sample Size Solutioins: Switch Samplers</h1>
+<p class="author"><em>Veen, D., Smid, S.C. &amp; Van de Schoot, R.</em></p>
+<p class="date"><em>3 oktober 2019</em></p>
+</div>
+<div id="abstract" class="section level2 unnumbered">
+<h2>Abstract</h2>
+</div>
+<div id="introduction" class="section level2">
+<h2><span class="header-section-number">0.1</span> Introduction</h2>
+<p>Many simulation studies have looked at using Bayesian statistics as a solution to the issue of limited sample size (REFS). Those simulation studies often compare Bayesian and Frequentist methods, reporting measures such as bias or coverage taken from a Frequentist perspective. In this short study we show that if one does not look at a comparance between Frequentist or Bayesian statistics and thereby forgoes the evaluation metrics from taken from that persepctive, some of the issues that are found in the simulation studies can be explained and resolved.</p>
+<p>When looking at a small sample simulation study from a Bayesian perspective it does not make sense to evaluate point estimates and the bias or coverage properties of the estimation procedure with respect to those point estimates. What a Bayesian should care about is calibration (CALIBRATION REFS). What is meant by calibration is that if we produce a 95% Credibility Interval this interval actually contains the true probability 95% of the time. The same holds for 80%, 60% or any other arbitrarly chosen interval. In other words, given that the correct model is specified, does the chosen inference algorithm allow me to obtain the correct posterior distribution. Recently Talts et al. (2019) have proposed a method that allows one to check if their inference algorithm is actually properly calibrated. They propose Simulation Based Calibration (SBC) as a part of robust Bayesian workflow. We show that not only can SBC prevent us from applying wrongfull inference in the future, it can help us explain some observations from the past.</p>
+<p>In simulation studies that looked into small sample size issues, Bayesian method are found to be an improvement over classical frequentist statistics given that enough prior information is specified to assist the classical data to find the correct point estimate. However, a fair point is that one can never know if one’s prior information is actually “correct”. Those same simulation studies find that Bayesian statistics with naively chosen priors, or even with weakly informative priors can perform even worse than frequentist statistics. One of the issues that is often found is that the variance parameters “blow up”, that is provide estimates that are very far from the value that was used to simulate the data. In this paper we use SBC to show that this problem can be attributed to the poor calibration of the Bayesian inference algorithm. We show that these large values and biases for the variance parameters disappear if an alternative more suffiticated inference algorithm is used that is properly calibrated. In the remainder of this paper we first briefly explain SBC. Thereafter we provide a case study in which we show that using the JAGS gibbs sampler results in the type of behavior that we know from earlier simulation studies, whilst using the Stan’s No-U-Turn-Sampler (NUTS) on the exact same data remedies all issues. We finish the paper by reiterating some guidelines for doing robust Bayesian inference that are particular useful when taking the capability of your models and algoritms to the test with small samples, noisy data, or complex models.</p>
+</div>
+<div id="simulation-based-calibration" class="section level2">
+<h2><span class="header-section-number">0.2</span> Simulation Based Calibration</h2>
+<p>To show allow readers to get more feeling for SBC plots and what they imply about the Computed Data-Averaged Posterior, or the calibration of the algorithm, we created a shiny application which can be seen at <a href="https://utrecht-university.shinyapps.io/SBC_plots/">https://utrecht-university.shinyapps.io/SBC_plots/</a> or the OSF webpage for this project at <a href="">create one</a>.</p>
+<div id="placeholder-sbc-explanation-taken-from-case-study-annotation-data-with-bob" class="section level3">
+<h3><span class="header-section-number">0.2.1</span> PLACEHOLDER SBC EXPLANATION TAKEN FROM CASE STUDY ANNOTATION DATA WITH BOB</h3>
+<p>A well calibrated model means that our probability statements are consistent with long-run observations REF(dawid_well-calibrated_1982). If we use a 60 percent credibility interval, we would indeed find that the predicted quantity is included in this interval in 60 percent of our long-run observations. Recently REF(talts_validating_2018) described how we could use simulations to test if our models are well calibrated. We provide a brief recap of the idea of Simulation-Based Calibration (SBC), for more details see REF(talts_validating_2018).</p>
+<p>It is desirable to have a procedure to corroborate that the posterior samples we get from our Bayesian algorithm are actually samples form the model that we expect. The structure of the Bayesian joint distribution, <span class="math inline">\(\pi(y,\theta) = \pi(y|\theta)\pi(\theta)\)</span>, provides a means to validate the Bayesian algorithms. We assume that the prior distribution covers parts of the parameter space that are relevant and as such we should sample ground truth from the prior<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, <span class="math inline">\(\tilde{\theta} \sim \pi(\theta)\)</span>. Thereafter data is sampled from the data generating process conditional on the ground truth, <span class="math inline">\(\tilde{y} \sim \pi(y|\tilde{\theta})\)</span>. Subsequently, you can do inference on these simulated observations to get the posterior distribution <span class="math inline">\(\pi(\theta|\tilde{y})\)</span>. Integrating the posteriors over the Bayesian joint distribution should get the prior distribution back,
+<span class="math display">\[\pi(\theta) = \int d\tilde{y}d\tilde{\theta}\pi(\theta|\tilde{y}) \pi(\tilde{y}|\tilde{\theta})\pi(\tilde{\theta}).\]</span>
+As stated by REF(talts_validating_2018) (p. 3): “<em>In other words, for any model the average of any exact posterior expectation with repect to the data generated from the Bayesian joint distribution reduces to the corresponding prior expectation.</em>” If not, we found a mistake and SBC is a procedure that helps us determine if we made a mistake and moreover, it provides information on the nature of the problem.</p>
+<p>SBC makes use of histograms of rank statistics to detect discrepancies between the data-averaged posterior and the prior<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>. If we rank each draw from the prior <span class="math inline">\(\tilde{\theta}\)</span> among the <span class="math inline">\(L\)</span> samples of the posterior <span class="math inline">\(\theta_1,...,\theta_L \sim \pi(\theta|\tilde{y})\)</span> and we do this over and over again, the rank statistics for the sample of the prior <span class="math inline">\(\tilde{\theta}\)</span> should follow a uniform distribution across [0, <span class="math inline">\(L\)</span>]. Systematic deviations from this uniformity point to specific problems with the Bayesian Algorithm, see REF(talts_validating_2018) for the specific patterns.</p>
+<div class="figure" style="text-align: center"><span id="fig:SBC-margin-unif"></span>
+<img src="index_files/figure-html/SBC-margin-unif-1.png" alt="Example of uniform distribution of rank statistics. The gray band represents 99% of the expected variation of the ranks under a uniform histogram." width="90%" />
+<p class="caption">
+Figure 1: Example of uniform distribution of rank statistics. The gray band represents 99% of the expected variation of the ranks under a uniform histogram.
+</p>
+</div>
+</div>
+</div>
+<div id="case-study" class="section level2">
+<h2><span class="header-section-number">0.3</span> Case Study</h2>
+<p>For this case study we take a look at a Latent Growth Curve Model (LGM) with only thee observed time points. LGMs are used to …… For more information see REFERENCES E.G. LITTLE ET AL. SEE OTHER CHAPTERS DUCO. LGMs for small samples are studies by for instance SEE REFS SANNE’S PAPERS &amp; SANNES PAPERS.</p>
+<p>In the case study we will be taking this model to breaking point by simulating a situation in which we only have data for 10 individuals at three time points. We compare JAGS and stan, we use the exact same criterea to establish that they have converged before using one of the posterior distrubtions for the purpose of SBC, namely split-rhat &lt; 1.02 &amp; number of effective sample size (neff) &gt; 2 * L.</p>
+<div class="figure" style="text-align: center"><span id="fig:ch07figSBC"></span>
+<img src="index_files/figure-html/ch07figSBC-1.png" alt="SBC plots for all parameters in the LGM for both JAGS and stan." width="90%" /><img src="index_files/figure-html/ch07figSBC-2.png" alt="SBC plots for all parameters in the LGM for both JAGS and stan." width="90%" />
+<p class="caption">
+Figure 2: SBC plots for all parameters in the LGM for both JAGS and stan.
+</p>
+</div>
+<div class="figure" style="text-align: center"><span id="fig:ch07figBias"></span>
+<img src="index_files/figure-html/ch07figBias-1.png" alt="Bias plots for all parameters in the LGM for both JAGS and stan." width="90%" /><img src="index_files/figure-html/ch07figBias-2.png" alt="Bias plots for all parameters in the LGM for both JAGS and stan." width="90%" />
+<p class="caption">
+Figure 3: Bias plots for all parameters in the LGM for both JAGS and stan.
+</p>
+</div>
+<!-- Moreover, a known issue in the computation of these types of models is the so called funnel in the posterior distribution (SEE REFS ON NON-CENTERED PARAMETRIZATION). We simulate -->
+</div>
+<div id="appendix" class="section level2 unnumbered">
+<h2>Appendix</h2>
+<p>SBC code..</p>
+<!-- We will not go into argumentation here on the relevance of trying to get as close to a point -->
+</div>
+
+
+
+
+
+
+
+<div class="footnotes">
+<hr />
+<ol start="1">
+<li id="fn1"><p>Traditional simulation studies try to recover a set ground truth for which the algorithm might perform well, or not. This leaves the suitability of the algorithm for large parts of the parameter space an open question.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>Note that we use Algorithm 2 of REF(talts_validating_2018) to mitigate potential problems with SBC that arise due to correlated posterior samples.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+},
+"search": false
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

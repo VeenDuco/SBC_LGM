@@ -2,11 +2,76 @@
 title: 'Small Sample Size Solutioins: Switch Samplers'
 author: "Veen, D., Smid, S.C. & Van de Schoot, R."
 date: "3 oktober 2019"
-output: html_document
+citation_package: natbib
+output:
+  # bookdown::pdf_book: default
+  #    toc: yes
+  #    toc_depth: '3'
+  #   toc: yes
+  #   toc_depth: 3
+  # pdf_document: default
+  bookdown::gitbook: default
+  # word_document:
+  # html_document:
+link-citations: yes
+csl: apa.csl
+bibliography:
+# - Ch07.bib
+- packages.bib
+
+github-repo: VeenDuco/SBC_LGM
+favicon: "favicon.ico"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  include = TRUE,
+  cache = FALSE,
+  collapse = TRUE,
+  echo = FALSE,
+  message = FALSE,
+  tidy = FALSE,
+  warning = FALSE,
+  comment = "  ",
+  dev = "png",
+  dpi = 300,
+  fig.align = "center",
+  fig.width = 7,
+  fig.asp = 0.618,
+  fig.show = "hold",
+  out.width = "90%"
+)
+# # automatically create a bib database for R packages
+ knitr::write_bib(c(
+   .packages(), "bayesplot", 'bookdown', "dplyr", "fGarch","gridExtra" , 
+   'knitr', "lavaan",  "mice", "rjags", 'rmarkdown', "rstan", 
+   "semTools", "SHELF" ,"shiny", "semPlot" 
+ ), 'packages.bib')
+library(semPlot)
+library(bayesplot)
+library(gridExtra)
+library(ggplot2)
+library(dplyr)
+ 
+sbc_rank <- function(ranks, reps, L, title = NULL){
+  
+  rank_df = data.frame(ranks = ranks)
+  
+  lb <- qbinom(.005, reps, (L + 1)^-1)
+  mean <- qbinom(.5, reps, (L + 1)^-1)
+  ub <- qbinom(.995, reps, (L + 1)^-1)
+  
+  ggplot(rank_df, aes(x = ranks))  + 
+    geom_segment(aes(x = -0.5, y = mean, xend = L - 0.5, yend = mean), colour = "grey25") + 
+    geom_polygon(data = data.frame(x = c(-1, -0.5, -1, L + 1, L + 0.5, L + 1),
+                                   y=c(lb, mean, ub, ub, mean, lb)), 
+                 aes(x = x, y = y), fill="grey45", color="grey25", alpha=0.5) +
+    geom_histogram(binwidth = 1, fill="#A25050",colour="black") + 
+    theme_default() + xlab("Rank Statistic") + ylab("") +
+    if(!is.null(title)) ggtitle(title) else ggtitle("")
+  
+} 
+ 
 ```
 
 ## Abstract {-}
@@ -22,6 +87,30 @@ In simulation studies that looked into small sample size issues, Bayesian method
 ## Simulation Based Calibration
 
 To show allow readers to get more feeling for SBC plots and what they imply about the Computed Data-Averaged Posterior, or the calibration of the algorithm, we created a shiny application which can be seen at [https://utrecht-university.shinyapps.io/SBC_plots/](https://utrecht-university.shinyapps.io/SBC_plots/) or the OSF webpage for this project at [create one](). 
+
+
+### PLACEHOLDER SBC EXPLANATION TAKEN FROM CASE STUDY ANNOTATION DATA WITH BOB
+
+A well calibrated model means that our probability statements are consistent with long-run observations REF(dawid_well-calibrated_1982). If we use a 60 percent credibility interval, we would indeed find that the predicted quantity is included in this interval in 60 percent of our long-run observations. Recently REF(talts_validating_2018) described how we could use simulations to test if our models are well calibrated. We provide a brief recap of the idea of Simulation-Based Calibration (SBC), for more details see REF(talts_validating_2018).
+
+It is desirable to have a procedure to corroborate that the posterior samples we get from our Bayesian algorithm are actually samples form the model that we expect. The structure of the Bayesian joint distribution, $\pi(y,\theta) = \pi(y|\theta)\pi(\theta)$, provides a means to validate the Bayesian algorithms. We assume that the prior distribution covers parts of the parameter space that are relevant and as such we should sample ground truth from the prior[^1], $\tilde{\theta} \sim \pi(\theta)$. Thereafter data is sampled from the data generating process conditional on the ground truth, $\tilde{y} \sim \pi(y|\tilde{\theta})$. Subsequently, you can do inference on these simulated observations to get the posterior distribution $\pi(\theta|\tilde{y})$. Integrating the posteriors over the Bayesian joint distribution should get the prior distribution back,
+$$\pi(\theta) = \int d\tilde{y}d\tilde{\theta}\pi(\theta|\tilde{y}) \pi(\tilde{y}|\tilde{\theta})\pi(\tilde{\theta}).$$
+As stated by REF(talts_validating_2018) (p. 3): "*In other words, for any model the average of any exact posterior expectation with repect to the data generated from the Bayesian joint distribution reduces to the corresponding prior expectation.*" If not, we found a mistake and SBC is a procedure that helps us determine if we made a mistake and moreover, it provides information on the nature of the problem.
+
+SBC makes use of histograms of rank statistics to detect discrepancies between the data-averaged posterior and the prior[^2]. If we rank each draw from the prior $\tilde{\theta}$ among the $L$ samples of the posterior $\theta_1,...,\theta_L \sim \pi(\theta|\tilde{y})$ and we do this over and over again, the rank statistics for the sample of the prior $\tilde{\theta}$ should follow a uniform distribution across [0, $L$]. Systematic deviations from this uniformity point to specific problems with the Bayesian Algorithm, see REF(talts_validating_2018) for the specific patterns. 
+
+
+```{r SBC-margin-unif, fig.cap= "Example of uniform distribution of rank statistics. The gray band represents 99% of the expected variation of the ranks under a uniform histogram.", results = 'hide', warning = FALSE}
+set.seed(1)
+sbc_rank(floor(runif(1000,0,7)), reps = 1000, L = 6) 
+```
+
+
+
+[^1]: Traditional simulation studies try to recover a set ground truth for which the algorithm might perform well, or not. This leaves the suitability of the algorithm for large parts of the parameter space an open question.
+[^2]: Note that we use Algorithm 2 of REF(talts_validating_2018) to mitigate potential problems with SBC that arise due to correlated posterior samples.
+
+
 
 
 ## Case Study
@@ -40,7 +129,137 @@ Intercept ~~ Slope
 ' 
 ```
 
-In the case study we will be taking this model to breaking point by simulating a situation in which we only have data for 10 individuals at three time point. Moreover, a known issue in the computation of these types of models is the so called funnel in the posterior distribution (SEE REFS ON NON-CENTERED PARAMETRIZATION). 
+In the case study we will be taking this model to breaking point by simulating a situation in which we only have data for 10 individuals at three time points. We compare JAGS and stan, we use the exact same criterea to establish that they have converged before using one of the posterior distrubtions for the purpose of SBC, namely split-rhat  < 1.02 & number of effective sample size (neff) > 2 * L.
+
+
+```{r ch07figSBC, fig.cap = 'SBC plots for all parameters in the LGM for both JAGS and stan.'}
+finalMatrix <- readRDS("results/jags_finalMatrix_wish_10ind_3time_255reps.rds")
+reps <- 255
+L <- 7
+
+rank_alpha1 <- finalMatrix[, 1]
+rank_alpha2 <- finalMatrix[, 2]
+rank_theta11 <- finalMatrix[, 3]
+rank_theta22 <- finalMatrix[, 4]
+rank_theta33 <- finalMatrix[, 5]
+rank_psi11 <- finalMatrix[, 6]
+rank_psi22 <- finalMatrix[, 7]
+rank_psi21 <- finalMatrix[, 8]
+
+sbc_alpha1 <- sbc_rank(rank_alpha1, reps = reps, L = L, title = "Alpha 1")
+sbc_alpha2 <- sbc_rank(rank_alpha2, reps = reps, L = L, title = "Alpha 2")
+sbc_theta11 <- sbc_rank(rank_theta11, reps = reps, L = L, title = "Theta 11")
+sbc_theta22 <- sbc_rank(rank_theta22, reps = reps, L = L, title = "Theta 22")
+sbc_theta33 <- sbc_rank(rank_theta33, reps = reps, L = L, title = "Theta 33")
+sbc_psi11 <- sbc_rank(rank_psi11, reps = reps, L = L, title = "Psi 11")
+sbc_psi22 <- sbc_rank(rank_psi22, reps = reps, L = L, title = "Psi 22")
+sbc_psi21 <- sbc_rank(rank_psi21, reps = reps, L = L, title = "Psi 21")
+
+gridExtra::grid.arrange(sbc_alpha1, sbc_alpha2, sbc_theta11,
+                        sbc_theta22, sbc_theta33,
+                        sbc_psi11, sbc_psi22, sbc_psi21, ncol = 3,
+                        top = "JAGS")
+
+finalMatrix <- readRDS("results/finalMatrix_wish_10ind_3time_255reps.rds")
+reps <- 255
+L <- 7
+
+rank_alpha1 <- finalMatrix[, 1]
+rank_alpha2 <- finalMatrix[, 2]
+rank_theta11 <- finalMatrix[, 3]
+rank_theta22 <- finalMatrix[, 4]
+rank_theta33 <- finalMatrix[, 5]
+rank_psi11 <- finalMatrix[, 6]
+rank_psi22 <- finalMatrix[, 7]
+rank_psi21 <- finalMatrix[, 8]
+
+sbc_alpha1 <- sbc_rank(rank_alpha1, reps = reps, L = L, title = "Alpha 1")
+sbc_alpha2 <- sbc_rank(rank_alpha2, reps = reps, L = L, title = "Alpha 2")
+sbc_theta11 <- sbc_rank(rank_theta11, reps = reps, L = L, title = "Theta 11")
+sbc_theta22 <- sbc_rank(rank_theta22, reps = reps, L = L, title = "Theta 22")
+sbc_theta33 <- sbc_rank(rank_theta33, reps = reps, L = L, title = "Theta 33")
+sbc_psi11 <- sbc_rank(rank_psi11, reps = reps, L = L, title = "Psi 11")
+sbc_psi22 <- sbc_rank(rank_psi22, reps = reps, L = L, title = "Psi 22")
+sbc_psi21 <- sbc_rank(rank_psi21, reps = reps, L = L, title = "Psi 21")
+
+gridExtra::grid.arrange(sbc_alpha1, sbc_alpha2, sbc_theta11,
+                        sbc_theta22, sbc_theta33,
+                        sbc_psi11, sbc_psi22, sbc_psi21, ncol = 3,
+                        top = "stan")
+```
+
+
+
+
+```{r ch07figBias, fig.cap = 'Bias plots for all parameters in the LGM for both JAGS and stan.'}
+finalMatrix <- readRDS("results/jags_finalMatrix_wish_10ind_3time_255reps.rds")
+
+bias_alpha1 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X9)) + theme_classic() + xlab(expression(paste("bias ", alpha[1])))
+
+bias_alpha2 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X10)) + theme_classic() + xlab(expression(paste("bias ", alpha[2])))
+
+bias_theta11 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X11)) + theme_classic() + xlab(expression(paste("bias ", theta[11])))
+
+bias_theta22 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X12)) + theme_classic() + xlab(expression(paste("bias ", theta[22])))
+
+bias_theta33 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X13)) + theme_classic() + xlab(expression(paste("bias ", theta[33])))
+
+bias_psi11 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X14)) + theme_classic() + xlab(expression(paste("bias ", psi[11])))
+
+bias_psi22 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X15)) + theme_classic() + xlab(expression(paste("bias ", psi[22])))
+
+bias_psi21 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X16)) + theme_classic() + xlab(expression(paste("bias ", psi[21])))
+
+gridExtra::grid.arrange(bias_alpha1, bias_alpha2, bias_theta11,
+                        bias_theta22, bias_theta33,
+                        bias_psi11, bias_psi22, bias_psi21, ncol = 3,
+                        top = "JAGS")
+
+
+finalMatrix <- readRDS("results/finalMatrix_wish_10ind_3time_255reps.rds")
+reps <- 255
+L <- 7
+
+bias_alpha1 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X9)) + theme_classic() + xlab(expression(paste("bias ", alpha[1])))
+
+bias_alpha2 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X10)) + theme_classic() + xlab(expression(paste("bias ", alpha[2])))
+
+bias_theta11 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X11)) + theme_classic() + xlab(expression(paste("bias ", theta[11])))
+
+bias_theta22 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X12)) + theme_classic() + xlab(expression(paste("bias ", theta[22])))
+
+bias_theta33 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X13)) + theme_classic() + xlab(expression(paste("bias ", theta[33])))
+
+bias_psi11 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X14)) + theme_classic() + xlab(expression(paste("bias ", psi[11])))
+
+bias_psi22 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X15)) + theme_classic() + xlab(expression(paste("bias ", psi[22])))
+
+bias_psi21 <- data.frame(finalMatrix) %>%
+  ggplot() + geom_histogram(aes(x = X16)) + theme_classic() + xlab(expression(paste("bias ", psi[21])))
+
+gridExtra::grid.arrange(bias_alpha1, bias_alpha2, bias_theta11,
+                        bias_theta22, bias_theta33,
+                        bias_psi11, bias_psi22, bias_psi21, ncol = 3,
+                        top = "stan")
+```
+
+
+<!-- Moreover, a known issue in the computation of these types of models is the so called funnel in the posterior distribution (SEE REFS ON NON-CENTERED PARAMETRIZATION). We simulate -->
 
 
 
