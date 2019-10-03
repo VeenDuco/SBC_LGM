@@ -1,5 +1,5 @@
 ---
-title: 'Small Sample Size Solutioins: Switch Samplers'
+title: 'Small Sample Size Solution: Switch Samplers'
 author: "Veen, D., Smid, S.C. & Van de Schoot, R."
 date: "3 oktober 2019"
 citation_package: natbib
@@ -10,7 +10,10 @@ output:
   #   toc: yes
   #   toc_depth: 3
   # pdf_document: default
-  bookdown::gitbook: default
+  bookdown::gitbook: 
+  config:
+        search: yes
+        edit: https://github.com/VeenDuco/SBC_LGM/%s
   # word_document:
   # html_document:
 link-citations: yes
