@@ -60,7 +60,7 @@ model {
     //target += lkj_corr_cholesky_lpdf(Lcorr | 1);
    
     
-    target += wishart_lpdf(Psi | 3, q);
+    target += inv_wishart_lpdf(Psi | 3, q);
     
     
     // target += normal_lpdf(tau_i | 0, psi11);

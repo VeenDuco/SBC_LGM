@@ -28,36 +28,48 @@ sbc_rank <- function(ranks, reps, L, title = NULL){
   
 }
 
-estimate <- stan_model("stan_models/LGM_estimate_wish2.stan")
-# detectCores()
-no_cores <- detectCores() - 1
-cl <- makeCluster(no_cores)
-registerDoParallel(cl)
+estimate <- stan_model("stan_models/LGM_estimate_inv_wish_uninf.stan")
+
+Ncores <- detectCores(logical = T)
+Ncores
+
+if(Sys.info()['sysname'] != "Windows"){
+  require("doMC")
+  registerDoMC(Ncores - 1)
+}else{
+  require("doParallel")
+  cl <- makeCluster(Ncores - 1)
+  registerDoParallel(cl)
+  #snow is also an option
+}
+
+
 
 n_ind <- 10
 n_time <- 3
 # informative <- TRUE
-reps <- 255
+reps <- 511
 bins <- 8
 L <- bins - 1
 
 set.seed(1236)
-# sigma1 <- rlnorm(reps, 0, 1)
-# sigma2 <- rlnorm(reps, 0, 1)
-# cov_sig <- runif(reps, -1, 1)
-# PSI <- array(NA, dim = c(2, 2, reps))
+PSI <- array(NA, dim = c(2, 2, reps))
 for(i in 1:reps){
-  PSI <- rWishart(reps, 3, diag(2))
-  # PSI[ , , i] <- matrix(c(sigma1[i], cov_sig[i], cov_sig[i], sigma2[i]), ncol = 2)
-  # print(is.positive.definite(PSI[ , , i]))
+  PSI[, , i] <- MCMCpack::riwish(3, diag(2))
+  # print(is.positive.definite(round(PSI[ , , i], 10)))
 }
-
-alpha1 <- rnorm(reps, 35, 10)
-alpha2 <- rnorm(reps, -5, 5)
+# for(i in 1:reps){
+#   PSI <- rWishart(reps, 3, diag(2))
+#   # PSI[ , , i] <- matrix(c(sigma1[i], cov_sig[i], cov_sig[i], sigma2[i]), ncol = 2)
+#   # print(is.positive.definite(PSI[ , , i]))
+# }
+# 
+alpha1 <- rnorm(reps, 0, 100000)
+alpha2 <- rnorm(reps, 0, 100000)
 theta <- list()
-theta[[1]] <- rlnorm(reps, 0, 1)
-theta[[2]] <- rlnorm(reps, 0, 1)
-theta[[3]] <- rlnorm(reps, 0, 1)
+theta[[1]] <- rlnorm(reps, 0, 5)
+theta[[2]] <- rlnorm(reps, 0, 5)
+theta[[3]] <- rlnorm(reps, 0, 5)
 tau <- array(NA, dim = c(n_ind, 2, reps))
 for(i in 1:reps){
   tau[ , , i] <- mvtnorm::rmvnorm(n = n_ind, mean = c(alpha1[i], alpha2[i]), sigma = PSI[ , , i])
@@ -91,50 +103,53 @@ prior_psi11 <- PSI[1, 1, ]
 prior_psi22 <- PSI[2, 2, ]
 prior_psi21 <- PSI[2, 1, ]
 
-# data.frame(a1 = prior_alpha1,
+data.frame(a1 = prior_alpha1,
+           a2 = prior_alpha2,
+           th1 = prior_theta11,
+           th2 = prior_theta22,
+           th3 = prior_theta33,
+           p11 = prior_psi11,
+           p22 = prior_psi22,
+           p21 = prior_psi21) %>%
+  ggplot() +
+  # geom_density(aes(x = a1, fill = "alpha1"), alpha = .3) +
+  # geom_density(aes(x = a2, fill = "alpha2"), alpha = .3) +
+  # geom_density(aes(x = th1, fill = "theta11"), alpha = .3) +
+  # geom_density(aes(x = th2, fill = "theta22"), alpha = .3) +
+  # geom_density(aes(x = th3, fill = "theta33"), alpha = .3) +
+  # geom_density(aes(x = p11, fill = "psi11"), alpha = .3) +
+  # geom_density(aes(x = p22, fill = "psi22"), alpha = .3) +
+  # geom_density(aes(x = p21, fill = "psi21"), alpha = .3) +
+  theme_classic()
+
+# df_pr <- data.frame(a1 = prior_alpha1,
 #            a2 = prior_alpha2,
-#            th = prior_theta,
+#            th1 = prior_theta11,
+#            th2 = prior_theta22,
+#            th3 = prior_theta33,
 #            p11 = prior_psi11,
 #            p22 = prior_psi22,
-#            p21 = prior_psi21) %>%
-#   ggplot() + 
-#   # geom_density(aes(x = a1, fill = "alpha1"), alpha = .3) +
-#   # geom_density(aes(x = a2, fill = "alpha2"), alpha = .3) +
-#   # geom_density(aes(x = th, fill = "theta"), alpha = .3) +
-#   geom_density(aes(x = p11, fill = "psi11"), alpha = .3) +
-#   geom_density(aes(x = p22, fill = "psi22"), alpha = .3) +
-#   geom_density(aes(x = p21, fill = "psi21"), alpha = .3) + 
-#   theme_classic()
+#            p21 = prior_psi21) 
 
+pp <- function(x) ggplot(x) + geom_density(aes(x = X1))
+pp(data.frame(df_pr[,1]))
 
 set.seed(123)
 warm.init <- 1000
 
 finalMatrix  <- foreach(i = 1:reps, .packages = c("rstan", "tcltk"), 
-                        .export = c("L", "warm.init", "reps",
-                                    "prior_y", 
-                                    "prior_alpha1", "prior_alpha2",
-                                    "prior_psi11", "prior_psi22", "prior_psi21",
-                                    "prior_theta11", "prior_theta22", "prior_theta33"),
                         .combine = rbind,
                         .verbose = TRUE) %dopar% {
                           
                           if(!exists("pb")) pb <- tkProgressBar("Parallel task", min = 1, max = reps)
                           setTkProgressBar(pb, i)  
                           
-                          # w_init <- rnorm(sim.data$D)
-                          # w0_init <- rnorm(1)
-                          # 
-                          # init_fun <- function(n) {
-                          #   list(w = w_init,
-                          #        w0 = w0_init)
-                          # }
-                          
                           thin <- 1
                           draws <- L
                           warm <- warm.init
                           counter <- 1
                           fit <- sampling(estimate, chains = 1, warmup = warm, iter = warm + draws, 
+                                          seed = i,
                                           data = list(n_ind = n_ind,
                                                       n_time = n_time,
                                                       y = prior_y[, , i],
@@ -268,7 +283,7 @@ gridExtra::grid.arrange(bias_alpha1, bias_alpha2, bias_theta11,
 
 
 
-pdf(paste0("results/plots_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".pdf"))
+pdf(paste0("results/uninf_plots_inv_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".pdf"))
 gridExtra::grid.arrange(sbc_alpha1, sbc_alpha2, sbc_theta11,
                         sbc_theta22, sbc_theta33,
                         sbc_psi11, sbc_psi22, sbc_psi21, ncol = 3)
@@ -280,7 +295,7 @@ gridExtra::grid.arrange(bias_alpha1, bias_alpha2, bias_theta11,
 dev.off()
 
 saveRDS(finalMatrix, 
-        paste0("results/finalMatrix_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".rds"))
+        paste0("results/uninf_finalMatrix_inv_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".rds"))
 
 
 
@@ -292,8 +307,8 @@ library(rjags)
 model <- '
 I =~ 1 * x1 + 1 * x2 + 1 * x3
 S =~ .083 * x1 + .25 * x2 + 1 * x3
-I ~ prior("dnorm(35, 0.1)") * 1
-S ~ prior("dnorm(-5, 0.2)") * 1
+I ~ prior("dnorm(35, 1e-10)") * 1
+S ~ prior("dnorm(-5, 1e-10)") * 1
 
 x1 ~~  x1
 x2 ~~  x2
@@ -305,38 +320,28 @@ x3 ~ 0
 
 '
 
-dpri <- dpriors(itheta = "dlnorm(0, 1)[sd]",
+dpri <- dpriors(itheta = "dlnorm(0, 5)[sd]",
                 target = "jags")
 
 set.seed(123)
 warm.init <- 1000
 
-# finalMatrix  <- foreach(i = 1:reps, .packages = c("blavaan", "rjags", "tcltk", "dplyr"), 
-#                         .export = c("L", "warm.init", "reps",
-#                                     "prior_y", "dpri",
-#                                     "prior_alpha1", "prior_alpha2",
-#                                     "prior_psi11", "prior_psi22", "prior_psi21",
-#                                     "prior_theta11", "prior_theta22", "prior_theta33"),
-#                         .combine = rbind,
-#                         .verbose = TRUE) %dopar% {
-#                           
-#                           if(!exists("pb")) pb <- tkProgressBar("Parallel task", min = 1, max = reps)
-#                           setTkProgressBar(pb, i)  
-#                           
-tempMatrix <- matrix(NA, ncol = 17, nrow = reps)
-for(i in 1:reps){
-  cat("\014") 
-  print(i)                          
+finalMatrix  <- foreach(i = 1:reps, .packages = c("blavaan", "rjags", "tcltk", "dplyr"), 
+                        .combine = rbind,
+                        .verbose = TRUE) %dopar% {    
                           
                           thin <- 1
                           draws <- L
                           warm <- warm.init
                           counter <- 1
                           
+                          if(!exists("pb")) pb <- tkProgressBar("Parallel task", min = 1, max = reps)
+                          setTkProgressBar(pb, i)
+                          
                           fit_blav <- bcfa(model, data = data.frame(x1 = prior_y[ , 1, i],
                                                                     x2 = prior_y[ , 2, i],
                                                                     x3 = prior_y[ , 3, i]),
-                                           dp = dpri, cp = "fa", save.lvs = TRUE,
+                                           dp = dpri, cp = "fa", save.lvs = TRUE, seed = i,
                                            burnin = warm, adapt = warm, sample = draws, n.chains = 1,
                                            target = "jags", mcmcfile = F, test = "none")
                           
@@ -351,7 +356,7 @@ for(i in 1:reps){
                             counter <- counter + 1
                             thin <- thin * 2
                             draws <- draws * 2
-                            warm <- warm * 1.1
+                            warm <- round(warm * 1.1)
                             
                             fit_blav <- bcfa(model, data = data.frame(x1 = prior_y[ , 1, i],
                                                                       x2 = prior_y[ , 2, i],
@@ -382,8 +387,11 @@ for(i in 1:reps){
                           fit_alpha1 <- fit_alpha1[(1:L) * thin] %>% unname()
                           fit_alpha2 <- fit_alpha2[(1:L) * thin] %>% unname()
                           fit_theta11 <- fit_theta11[(1:L) * thin] %>% unname()
+                          fit_theta11 <- sqrt(fit_theta11)
                           fit_theta22 <- fit_theta22[(1:L) * thin] %>% unname()
+                          fit_theta22 <- sqrt(fit_theta22)
                           fit_theta33 <- fit_theta33[(1:L) * thin] %>% unname()
+                          fit_theta33 <- sqrt(fit_theta33)
                           fit_psi11 <- fit_psi11[(1:L) * thin] %>% unname()
                           fit_psi22 <- fit_psi22[(1:L) * thin] %>% unname()
                           fit_psi21 <- fit_psi21[(1:L) * thin] %>% unname()
@@ -391,34 +399,34 @@ for(i in 1:reps){
                           
                           alpha1_bias <- unname(blavInspect(fit_blav, what = "postmean")[1]) - prior_alpha1[i]
                           alpha2_bias <- unname(blavInspect(fit_blav, what = "postmean")[2]) - prior_alpha2[i]
-                          theta11_bias <- unname(blavInspect(fit_blav, what = "postmean")[3]) - prior_theta11[i]
-                          theta22_bias <- unname(blavInspect(fit_blav, what = "postmean")[4]) - prior_theta22[i]
-                          theta33_bias <- unname(blavInspect(fit_blav, what = "postmean")[5]) - prior_theta33[i]
+                          theta11_bias <- mean(fit_theta11) - prior_theta11[i]
+                          theta22_bias <- mean(fit_theta22) - prior_theta22[i]
+                          theta33_bias <- mean(fit_theta33) - prior_theta33[i]
                           psi11_bias <- unname(blavInspect(fit_blav, what = "postmean")[6]) - prior_psi11[i]
                           psi22_bias <- unname(blavInspect(fit_blav, what = "postmean")[7]) - prior_psi22[i]
                           psi21_bias <- unname(blavInspect(fit_blav, what = "postmean")[8]) - prior_psi21[i]
                           
-                          # tempMatrix <- matrix(NA, ncol = 17, nrow = 1)
+                          tempMatrix <- matrix(NA, ncol = 17, nrow = 1)
                           
-                          tempMatrix[i, 1] <- sum(fit_alpha1 < prior_alpha1[i])
-                          tempMatrix[i, 2] <- sum(fit_alpha2 < prior_alpha2[i])
-                          tempMatrix[i, 3] <- sum(fit_theta11 < prior_theta11[i])
-                          tempMatrix[i, 4] <- sum(fit_theta22 < prior_theta22[i])
-                          tempMatrix[i, 5] <- sum(fit_theta33 < prior_theta33[i])
-                          tempMatrix[i, 6] <- sum(fit_psi11 < prior_psi11[i])
-                          tempMatrix[i, 7] <- sum(fit_psi22 < prior_psi22[i])
-                          tempMatrix[i, 8] <- sum(fit_psi21 < prior_psi21[i])
+                          tempMatrix[, 1] <- sum(fit_alpha1 < prior_alpha1[i])
+                          tempMatrix[, 2] <- sum(fit_alpha2 < prior_alpha2[i])
+                          tempMatrix[, 3] <- sum(fit_theta11 < prior_theta11[i])
+                          tempMatrix[, 4] <- sum(fit_theta22 < prior_theta22[i])
+                          tempMatrix[, 5] <- sum(fit_theta33 < prior_theta33[i])
+                          tempMatrix[, 6] <- sum(fit_psi11 < prior_psi11[i])
+                          tempMatrix[, 7] <- sum(fit_psi22 < prior_psi22[i])
+                          tempMatrix[, 8] <- sum(fit_psi21 < prior_psi21[i])
                           
-                          tempMatrix[i, 9] <- alpha1_bias
-                          tempMatrix[i, 10] <- alpha2_bias
-                          tempMatrix[i, 11] <- theta11_bias
-                          tempMatrix[i, 12] <- theta22_bias
-                          tempMatrix[i, 13] <- theta33_bias
-                          tempMatrix[i, 14] <- psi11_bias
-                          tempMatrix[i, 15] <- psi22_bias
-                          tempMatrix[i, 16] <- psi21_bias
+                          tempMatrix[, 9] <- alpha1_bias
+                          tempMatrix[, 10] <- alpha2_bias
+                          tempMatrix[, 11] <- theta11_bias
+                          tempMatrix[, 12] <- theta22_bias
+                          tempMatrix[, 13] <- theta33_bias
+                          tempMatrix[, 14] <- psi11_bias
+                          tempMatrix[, 15] <- psi22_bias
+                          tempMatrix[, 16] <- psi21_bias
                           
-                          tempMatrix[i, 17] <- counter
+                          tempMatrix[, 17] <- counter
                           
                           tempMatrix
                           
@@ -482,7 +490,7 @@ gridExtra::grid.arrange(bias_alpha1, bias_alpha2, bias_theta11,
 
 
 
-pdf(paste0("results/jags_plots_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".pdf"))
+pdf(paste0("results/uninf_jags_plots_inv_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".pdf"))
 gridExtra::grid.arrange(sbc_alpha1, sbc_alpha2, sbc_theta11,
                         sbc_theta22, sbc_theta33,
                         sbc_psi11, sbc_psi22, sbc_psi21, ncol = 3)
@@ -494,7 +502,7 @@ gridExtra::grid.arrange(bias_alpha1, bias_alpha2, bias_theta11,
 dev.off()
 
 saveRDS(finalMatrix, 
-        paste0("results/jags_finalMatrix_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".rds"))
+        paste0("results/uninf_jags_finalMatrix_inv_wish_", n_ind, "ind_", n_time, "time_", reps, "reps", ".rds"))
 
 
 
